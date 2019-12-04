@@ -7,3 +7,4 @@
 [submodule "catkin_ws/src/yumipy_service_bridge"]
 	path = catkin_ws/src/yumipy_service_bridge
 	url = https://github.com/allenyh/yumipy_service_bridge.git
+	branch = master
