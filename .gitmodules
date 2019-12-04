@@ -4,9 +4,6 @@
 [submodule "catkin_ws/src/yumipy"]
 	path = catkin_ws/src/yumipy
 	url = https://github.com/allenyh/yumipy.git
-[submodule "catkin_ws/src/camera_calibrator"]
-	path = catkin_ws/src/camera_calibrator
-	url = https://github.com/allenyh/camera_calibrator.git
 [submodule "catkin_ws/src/autolab_core"]
 	path = catkin_ws/src/autolab_core
 	url = https://github.com/BerkeleyAutomation/autolab_core.git
