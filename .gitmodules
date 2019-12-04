@@ -1,9 +1,9 @@
-[submodule "catkin_ws/src/yumipy_service_bridge"]
-	path = catkin_ws/src/yumipy_service_bridge
-	url = https://github.com/allenyh/yumipy_service_bridge.git
 [submodule "catkin_ws/src/yumipy"]
 	path = catkin_ws/src/yumipy
 	url = https://github.com/allenyh/yumipy.git
 [submodule "catkin_ws/src/autolab_core"]
 	path = catkin_ws/src/autolab_core
 	url = https://github.com/BerkeleyAutomation/autolab_core.git
+[submodule "yumipy_service_bridge"]
+	path = yumipy_service_bridge
+	url = https://github.com/allenyh/yumipy_service_bridge.git

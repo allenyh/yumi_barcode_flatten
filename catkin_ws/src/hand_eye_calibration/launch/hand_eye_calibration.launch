@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+   <node name="hand_eye_calibration_node" pkg="hand_eye_calibration" type="main.py" output="screen"/>
+</launch>
