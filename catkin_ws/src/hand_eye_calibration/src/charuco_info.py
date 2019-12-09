@@ -19,12 +19,12 @@ class CharucoCornerPos:
 
     def getCorner(self, corner_idx):
         num_corners = (ROWS-1) * (COLS-1)
-        y_bias = -(corner_idx*2/num_corners)
-        if y_bias == 0:
-            y_bias = 1
-        z_bias = (corner_idx % (ROWS-1) - (ROWS-2)/2)
-        tf_link6_corner = tfm.translation_matrix([self.tf_link6_center[0, 3],
-                                                  self.tf_link6_center[1, 3] + y_bias * SQUARE_LENGTH/2,
+        x_bias = -(corner_idx*2/num_corners)
+        if x_bias == 0:
+            x_bias = 1
+        z_bias = -(corner_idx % (ROWS-1) - (ROWS-2)/2)
+        tf_link6_corner = tfm.translation_matrix([self.tf_link6_center[0, 3] + x_bias * SQUARE_LENGTH/2,
+                                                  self.tf_link6_center[1, 3],
                                                   self.tf_link6_center[2, 3] + z_bias * SQUARE_LENGTH])
         tf_map_corner = np.dot(self.tf_map_link6, tf_link6_corner)
         return tfm.translation_from_matrix(tf_map_corner).tolist()
@@ -39,8 +39,9 @@ class CharucoProcessor:
 
     def draw_corners(self, image, corners):
         color_red = (0, 0, 255)
-        for corner in corners:
+        for i, corner in enumerate(corners):
             image = cv2.circle(image, tuple(corner[0]), 3, color_red, -1)
+            image = cv2.putText(image, str(i+1), tuple(corner[0]), cv2.FONT_HERSHEY_SIMPLEX, 1, color_red, 1, cv2.LINE_AA)
         return image
 
     def detect_corners(self, image):

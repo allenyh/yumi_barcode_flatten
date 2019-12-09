@@ -15,9 +15,10 @@ class HandEyeCalibration:
         self.processor = CharucoProcessor()
         self.bridge = CvBridge()
         self.mark_count = 0
-        rospy.Subscriber("/camera/color/image_raw", self.corner_detect_cb, queue=1)
-        self.detection_pub = ("/charuco_detection", Image)
+        rospy.Subscriber("/camera/color/image_raw", Image, self.corner_detect_cb, queue_size=1)
+        self.detection_pub = rospy.Publisher("/charuco_detection", Image, queue_size=1)
         rospy.Service("/mark_pose", Trigger, self.mark_pose)
+        rospy.Service("calculate_error", Trigger, self.calculate_error)
 
     def corner_detect_cb(self, msg):
         image = self.bridge.imgmsg_to_cv2(msg, "bgr8")
@@ -27,9 +28,10 @@ class HandEyeCalibration:
 
     def mark_pose(self, req):
         res = TriggerResponse()
-        pose_3d = CharucoCornerPos(get_pose())
+        trans, quat = get_pose()
+        pose_3d = CharucoCornerPos(trans, quat)
         pose_2d, ids = self.processor.get_2d_pose()
-        if pose_2d != None and len(pose_2d) == 10:
+        if pose_2d is not None and len(pose_2d) == 10:
             dump_data(pose_3d, pose_2d, ids)
             res.success = True
             self.mark_count += 1
@@ -44,6 +46,13 @@ class HandEyeCalibration:
             res.message = "Successfully mark current pose, current calibration error: {}".format(error)
         return res
 
+    def calculate_error(self, req):
+        res = TriggerResponse()
+        calibrator = CameraCalibrator()
+        error = calibrator.calibrate()
+        res.success = True
+        res.message = "Successfully mark current pose, current calibration error: {}".format(error)
+        return res
 
 if __name__ == '__main__':
     rospy.init_node('hand_eye_calibration_node')
