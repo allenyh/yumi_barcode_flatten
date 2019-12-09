@@ -1,0 +1,6 @@
+catkin_ws/.catkin_workspace
+catkin_ws/build/
+catkin_ws/devel/
+catkin_ws/src/.idea/
+catkin_ws/src/realsense-ros/
+.idea/
