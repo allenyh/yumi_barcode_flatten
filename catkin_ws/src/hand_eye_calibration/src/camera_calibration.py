@@ -45,15 +45,16 @@ class Program(object):
         rod = res_1[0][3:6]
         q = rod_to_quat(rod)
         print('pose', list(trans) + list(q))
-
+        # tf from robot to cam
         transform = tfm.concatenate_matrices(
             tfm.translation_matrix(trans), tfm.quaternion_matrix(q))
+        # tf from cam to robot
         inversed_transform = tfm.inverse_matrix(transform)
         translation = tfm.translation_from_matrix(inversed_transform)
         quaternion = tfm.quaternion_from_matrix(inversed_transform)
         pose = translation.tolist() + quaternion.tolist()
         print('matrix:\n', np.linalg.inv(matrix_from_xyzquat(pose)))
-        return list(trans) + list(q), self.error_diff
+        return list(translation) + list(quaternion), self.error_diff
 
 
 class CameraCalibrator:

@@ -22,7 +22,7 @@ COLS = 3
 SQUARE_LENGTH = 0.02
 MARKER_LENGTH = 0.016
 # The center position of charuco board w.r.t. link_6
-charuco_center_x = -0.0055
+charuco_center_x = 0.0055
 charuco_center_y = 0
 charuco_center_z = 0.085
 
