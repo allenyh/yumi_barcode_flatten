@@ -48,10 +48,14 @@ if [ $# -gt 0 ]; then
         docker exec -it yumi-barcode-flatten bash
     else
         ${DOCKER_CMD} run --name yumi-barcode-flatten --rm -it --net=host --privileged -v /dev:/dev \
-            -e DISPLAY=$DISPLAY \
+            --env="DISPLAY"="$DISPLAY" \
+	    --env="QT_X11_NO_MITSHM=1" \
             -v /etc/localtime:/etc/localtime:ro -v /var/run/docker.sock:/var/run/docker.sock \
             -v /home/$USER/yumi_barcode_flatten:/home/${DOCKER_USER}/yumi_barcode_flatten \
-            -v /tmp/.X11-unix/:/tmp/.X11-uni \
+            --volume="/tmp/.X11-unix/:/tmp/.X11-unix:rw" \
+	    -env="XAUTHORITY=$XAUTH" \
+	    --volume="$XAUTH:$XAUTH" \
+	    --runtime=nvidia \
             -w /home/${DOCKER_USER}/yumi_barcode_flatten \
             --device=/dev/dri:/dev/dri \
             --device=/dev/nvhost-ctrl \
