@@ -13,6 +13,7 @@ FROM coolcat647/ros-pytorch:cuda9.0
 SHELL ["/bin/bash", "-c"]
 
 # ROS packages
+RUN apt-get update
 RUN apt-get install -y ros-${ROS_DISTRO}-hardware-interface \
     ros-${ROS_DISTRO}-velocity-controllers \
     ros-${ROS_DISTRO}-controller-manager \
@@ -29,6 +30,7 @@ RUN apt-get install -y ros-${ROS_DISTRO}-hardware-interface \
     ros-${ROS_DISTRO}-pcl-conversions \
     ros-${ROS_DISTRO}-pcl-ros \
     ros-${ROS_DISTRO}-ddynamic-reconfigure \
+    ros-${ROS_DISTRO}-rgbd-launch \
     libopencv-dev \
     libv4l-dev \
     python-pymodbus \
