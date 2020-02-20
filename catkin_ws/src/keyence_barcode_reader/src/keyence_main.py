@@ -11,12 +11,12 @@ class KeyenceReader:
         self._port = 9004
         self._socket = None
         self._buffsize = 20
+        self._timeout = 3
 
         self.connect()
 
         rospy.Service("/read_barcode", Trigger, self.read)
         rospy.Service("/tune_focus", Trigger, self.tune_focus)
-
 
     def connect(self):
         rospy.logwarn('Opening socket on {0}:{1}'.format(self._ip, self._port))
@@ -30,11 +30,13 @@ class KeyenceReader:
 
     def read(self, req):
         self._socket.send("LON\r")
-        time.sleep(3)
-        self._socket.send("LOFF\r")
         res = TriggerResponse()
         res.success = True
-        res.message = self._socket.recv(self._buffsize).split('\r')[0]
+        try:
+            res.message = self._socket.recv(self._buffsize).split('\r')[0]
+        except IOError:
+            self._socket.send("LOFF\r")
+            res.message = self._socket.recv(self._buffsize).split('\r')[0]
 
         return res
 
@@ -42,7 +44,7 @@ class KeyenceReader:
         self._socket.send("FTUNE\r")
         res = TriggerResponse()
         res.success = True
-        res.message = self._socket.recv(32).split('\r')[1][13:]
+        res.message = self._socket.recv(50).split('\r')[1][13:]
 
         return res
 
