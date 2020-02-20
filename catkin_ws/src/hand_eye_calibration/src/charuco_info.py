@@ -1,9 +1,10 @@
 import tf.transformations as tfm
 import numpy as np
 import cv2
+from sensor_msgs import point_cloud2
 from cv2 import aruco
 from cv_bridge import CvBridge, CvBridgeError
-from utils import get_int, charuco_center_x, charuco_center_y, charuco_center_z,\
+from utils import charuco_center_x, charuco_center_y, charuco_center_z,\
     ROWS, COLS, SQUARE_LENGTH, MARKER_LENGTH
 
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
@@ -36,6 +37,7 @@ class CharucoProcessor:
         self.bridge = CvBridge()
         self.corners = None
         self.ids = None
+        self.pc_data = None
 
     def draw_corners(self, image, corners):
         color_red = (0, 0, 255)
@@ -43,6 +45,9 @@ class CharucoProcessor:
             image = cv2.circle(image, tuple(corner[0]), 3, color_red, -1)
             image = cv2.putText(image, str(i+1), tuple(corner[0]), cv2.FONT_HERSHEY_SIMPLEX, 1, color_red, 1, cv2.LINE_AA)
         return image
+
+    def update_pc_data(self, pc):
+        self.pc_data = pc
 
     def detect_corners(self, image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -60,3 +65,14 @@ class CharucoProcessor:
         
     def get_2d_pose(self):
         return self.corners, self.ids
+
+    def get_3d_pose(self):
+        poses_3d = []
+        uvs = []
+        for corner in self.corners:
+            uvs.append([int(corner[0][0]), int(corner[0][1])])
+        pc2 = point_cloud2.read_points(self.pc_data, uvs=uvs)
+        for i, point in enumerate(pc2):
+            pose_3d = [point[0], point[1], point[2]]
+            poses_3d.append(pose_3d)
+        return poses_3d, self.ids

@@ -9,13 +9,6 @@ import cv2
 import tf.transformations as tfm
 from yumipy_service_bridge.srv import GetPose, GetPoseResponse
 
-#Intrinsics Parameters
-Fx = 926.4415893554688
-Fy = 927.278564453125
-Px = 650.5962524414062
-Py = 373.42974853515625
-DistCoeffs = [0,0,0,0,0]
-
 #Charuco Board parameters
 ROWS = 6
 COLS = 3
@@ -27,31 +20,24 @@ charuco_center_y = 0
 charuco_center_z = 0.085
 
 #Place to save data
-data_base = "/home/allen/yumi_barcode_flatten/catkin_ws/src/hand_eye_calibration/result/"
+data_base = "/home/developer/yumi_barcode_flatten/catkin_ws/src/hand_eye_calibration/result/"
 data_file_name = "data.json"
 ext_file_name = "extrinsics.json"
 
 # Service to get link6 cart. pose
 robot_pose_ser = rospy.ServiceProxy("/get_pose", GetPose)
 
-def get_int():
-    intrinsics = np.array([[Fx, 0, Px],
-                           [0, Fy, Py],
-                           [0, 0, 1]])
-    return intrinsics
 
-def get_ext_init_guess(point2d, point3d):
+def get_ext_init_guess(point3d_cam, point3d_arm):
     """
     Get extrinsic matrix initial guess
     reference: http://post.queensu.ca/~sdb2/PAPERS/PAMI-3DLS-1987.pdf
     """
-    for i in xrange(len(point2d)):
-        point2d[i].append(1)
 
-    u_point2d = np.mean(point2d, axis=0)
-    u_point3d = np.mean(point3d, axis=0)
+    u_point3d_cam = np.mean(point3d_cam, axis=0)
+    u_point3d_arm = np.mean(point3d_arm, axis=0)
 
-    H = np.matmul((point3d - u_point3d).T, point2d - u_point2d)
+    H = np.matmul((point3d_arm - u_point3d_arm).T, point3d_cam - u_point3d_cam)
 
     U, _, V = np.linalg.svd(H)
 
@@ -63,7 +49,7 @@ def get_ext_init_guess(point2d, point3d):
         X = np.matmul(V, U.T)
 
     R = X
-    T = u_point3d - np.matmul(R, u_point2d)
+    T = u_point3d_arm - np.matmul(R, u_point3d_cam)
 
     extrinsics = np.identity(4)
     extrinsics[0:3, 0:3] = R
@@ -76,25 +62,23 @@ def get_ext_init_guess(point2d, point3d):
 
 
 def get_pose():
-    robot_pose = robot_pose_ser()
+    robot_pose = robot_pose_ser(arm='left')
     trans = robot_pose.pose[0: 3]
     quat = robot_pose.pose[3:]
     return trans, quat
 
 
-def dump_data(pose_3d, pose_2d, ids):
+def dump_data(pose_3d_arm, pose_3d_cam, ids):
     data = {}
     with open(data_base + data_file_name, "r") as data_file:
         data = json.load(data_file)
     data_index = len(data)
-    #print data
     for i, id_ in enumerate(ids):
-        corner_pose = pose_3d.getCorner(i)
+        corner_pose = pose_3d_arm.getCorner(i)
         data[data_index+i] = {
-            "corner3d": corner_pose,
-            "corner2d": pose_2d[i].tolist()[0]
+            "corner3d_arm": corner_pose,
+            "corner3d_cam": pose_3d_cam[i]
         }
-    #print(data)
     with open(data_base + data_file_name, "w") as data_file:
         json.dump(data, data_file)
 
