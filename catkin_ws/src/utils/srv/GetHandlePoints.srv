@@ -1,0 +1,4 @@
+---
+float64 angle
+int8[] left_arm_point
+int8[] right_arm_point

@@ -45,7 +45,7 @@ fi
 #
 if [ $# -gt 0 ]; then
     if [ "$1" == "same" ]; then
-        docker exec -it yumi-barcode-flatten bash
+        docker exec -it --privileged yumi-barcode-flatten bash
     else
         ${DOCKER_CMD} run --name yumi-barcode-flatten --rm -it --net=host --privileged -v /dev:/dev \
             --env="DISPLAY"="$DISPLAY" \

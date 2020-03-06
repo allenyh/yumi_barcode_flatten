@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models.resnet import ResNet
 import torchvision.transforms as transforms
+from torchvision import models
 
 n_class = 2
 
