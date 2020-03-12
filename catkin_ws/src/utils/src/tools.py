@@ -29,9 +29,6 @@ class Tools:
         self.arms_wait_pose = {'left': [356, 200, 100], 'right': [356, -200, 100]}
         self.mask_handle = MaskHandle()
 
-    #def set_images(self):
-
-
     def flatten_cb(self, req):
         color_msg = rospy.wait_for_message("/camera/color/image_raw", Image)
         color_img = self.cv_bridge.imgmsg_to_cv2(color_msg, "bgr8")
