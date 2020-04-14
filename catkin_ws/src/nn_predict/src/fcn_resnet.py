@@ -4,7 +4,9 @@ import torch.nn.functional as F
 from torchvision.models.resnet import ResNet
 import torchvision.transforms as transforms
 from torchvision import models
-
+import sys
+sys.path.append('/home/developer/yumi_barcode_flatten/catkin_ws/src/nn_predict/carafe')
+from carafe import CARAFEPack
 n_class = 2
 
 def conv3x3(in_planes, out_planes, stride=1, groups=1, dilation=1):
@@ -120,35 +122,54 @@ layer_cfg = {
 
 class FCN(nn.Module):
 
-    def __init__(self, pretrained_net, n_class):
+    def __init__(self, n_class=2, pretrained=True):
         super(FCN, self).__init__()
         self.n_class = n_class
-        self.pretrained_net = pretrained_net
+        resnet = Resnet(model='resnet50', pretrained=pretrained)
+        self.layer0 = nn.Sequential(resnet.conv1, resnet.bn1, resnet.relu, resnet.maxpool)
+        self.layer1, self.layer2, self.layer3, self.layer4 = resnet.layer1, resnet.layer2, resnet.layer3, resnet.layer4
+        for n, m in self.layer3.named_modules():
+            if 'conv2' in n:
+                m.dilation, m.padding, m.stride = (2, 2), (2, 2), (1, 1)
+            elif 'downsample.0' in n:
+                m.stride = (1, 1)
+        for n, m in self.layer4.named_modules():
+            if 'conv2' in n:
+                m.dilation, m.padding, m.stride = (4, 4), (4, 4), (1, 1)
+            elif 'downsample.0' in n:
+                m.stride = (1, 1)
+
         self.relu = nn.ReLU(inplace=True)
-        self.deconv1 = nn.ConvTranspose2d(2048, 1024, kernel_size=3, stride=2, padding=1, dilation=1, output_padding=1)
+        self.deconv1 = nn.ConvTranspose2d(2048, 1024, kernel_size=3, stride=1, padding=4, dilation=4)
         self.bn1 = nn.BatchNorm2d(1024)
-        self.deconv2 = nn.ConvTranspose2d(1024, 512, kernel_size=3, stride=2, padding=1, dilation=1, output_padding=1)
+        self.deconv2 = nn.ConvTranspose2d(1024, 512, kernel_size=3, stride=1, padding=2, dilation=2)
         self.bn2 = nn.BatchNorm2d(512)
         self.deconv3 = nn.ConvTranspose2d(512, 256, kernel_size=3, stride=2, padding=1, dilation=1, output_padding=1)
         self.bn3 = nn.BatchNorm2d(256)
         self.deconv4 = nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, dilation=1, output_padding=1)
         self.bn4 = nn.BatchNorm2d(128)
-        self.deconv5 = nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, dilation=1, output_padding=1)
+        self.deconv5 = nn.Sequential(
+            conv1x1(128, 64),
+            CARAFEPack(channels=64, scale_factor=2)
+        )
+        # self.deconv5 = nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, dilation=1, output_padding=1)
         self.bn5 = nn.BatchNorm2d(64)
         self.classifier = nn.Conv2d(64, self.n_class, kernel_size=1)
 
     def forward(self, x):
-        output = self.pretrained_net(x)
-        x5 = output['x5']  # size=(N, 512, x.H/32, x.W/32)
-        x4 = output['x4']  # size=(N, 512, x.H/16, x.W/16)
+        x1 = self.layer0(x)
+        x2 = self.layer1(x1)
+        x3 = self.layer2(x2)
+        x4 = self.layer3(x3)
+        x5 = self.layer4(x4)
 
-        score = self.relu(self.deconv1(x5))  # size=(N, 512, x.H/16, x.W/16)
-        score = self.bn1(score + x4)  # element-wise add, size=(N, 512, x.H/16, x.W/16)
-        score = self.bn2(self.relu(self.deconv2(score)))  # size=(N, 256, x.H/8, x.W/8)
-        score = self.bn3(self.relu(self.deconv3(score)))  # size=(N, 128, x.H/4, x.W/4)
-        score = self.bn4(self.relu(self.deconv4(score)))  # size=(N, 64, x.H/2, x.W/2)
-        score = self.bn5(self.relu(self.deconv5(score)))  # size=(N, 32, x.H, x.W)
-        score = self.classifier(score)  # size=(N, n_class, x.H/1, x.W/1)
+        score = self.relu(self.deconv1(x5))
+        score = self.bn1(score + x4)
+        score = self.bn2(self.relu(self.deconv2(score)))
+        score = self.bn3(self.relu(self.deconv3(score)))
+        score = self.bn4(self.relu(self.deconv4(score)))
+        score = self.bn5(self.relu(self.deconv5(score)))
+        score = self.classifier(score)
 
         return score
 
@@ -191,7 +212,5 @@ class Resnet(ResNet):
         return output
 
 
-def build_fcn_resnet(model='resnet50', n_class=2):
-    resnet_model = Resnet(model)
-
-    return FCN(pretrained_net=resnet_model, n_class=n_class)
+def build_fcn_resnet(n_class=2):
+    return FCN(n_class=n_class)

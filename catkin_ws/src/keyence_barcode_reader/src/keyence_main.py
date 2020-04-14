@@ -11,7 +11,7 @@ class KeyenceReader:
         self._port = 9004
         self._socket = None
         self._buffsize = 20
-        self._timeout = 3
+        self._timeout = 1
 
         self.connect()
 

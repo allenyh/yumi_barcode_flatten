@@ -55,6 +55,8 @@ class MaskHandle:
         cv2.imwrite("./depth.jpg", depth_threshold)
         self.depth_img = depth_threshold
         self.depth_angle, self.depth_box, self.depth_center = self.get_bbx(self.depth_img)
+        # if self.depth_angle < 0:
+        #     self.depth_angle += 90
         rospy.loginfo("depth angle: {}".format(self.depth_angle))
         self.r_depth_img = self.rotate_img(self.depth_img, -self.depth_angle)
         cv2.imwrite("./r_depth.jpg", self.r_depth_img)
@@ -101,6 +103,9 @@ class MaskHandle:
         center = np.array([(max_col + min_col) / 2,
                                    (max_row + min_row) / 2])
         return angle, box, center
+
+    def get_barcode_center(self):
+        return self.barcode_center
 
     # Check if mask_box is inside depth_box
     def check_in_range(self):
@@ -186,6 +191,7 @@ class MaskHandle:
     def get_barcode_angle(self):
         count = [0, 0]  # horizontal, vertical
         r_image = self.rotate_img(self.color_img, -self.depth_angle, 255)
+        cv2.imwrite('./r_color.jpg', r_image)
         crop = r_image[self.r_barcode_box[np.argmin(self.r_barcode_box[:, 1])][1]:
                        self.r_barcode_box[np.argmax(self.r_barcode_box[:, 1])][1],
                        self.r_barcode_box[np.argmin(self.r_barcode_box[:, 0])][0]:
@@ -203,6 +209,8 @@ class MaskHandle:
         erode = cv2.erode(thr, kernel)
         cv2.imwrite("./erode.jpg", erode)
         lines = cv2.HoughLines(erode, 1, np.pi / 180, length / 4 + 1)
+        if lines is None:
+            return None
         for l in lines:
             degree = l[0, 1] * radian_to_degree
             if (180 >= degree >= 170) or (10 >= degree >= 0):
@@ -229,19 +237,20 @@ class MaskHandle:
                 quadrant = 3
         return quadrant
 
+    def get_single_handle_strategy(self):
+        barcode_angle = self.get_barcode_angle()
+        if barcode_angle is None:
+            return None
+        pos = self.barcode_center
+        rad = (barcode_angle + self.depth_angle) * degree_to_radian
+        return pos, rad
+
     def get_handle_strategy(self):
         barcode_angle = self.get_barcode_angle()
+        if barcode_angle is None:
+            return None
         rospy.loginfo("barcode angle {}".format(barcode_angle))
         quadrant = self.find_barcode_quadrant()
-        min_barcode_col = self.barcode_box[np.argmin(self.barcode_box[:, 0])][0]
-        max_barcode_col = self.barcode_box[np.argmax(self.barcode_box[:, 0])][0]
-        min_barcode_row = self.barcode_box[np.argmin(self.barcode_box[:, 1])][1]
-        max_barcode_row = self.barcode_box[np.argmax(self.barcode_box[:, 1])][1]
-
-        min_depth_col = self.depth_box[np.argmin(self.depth_box[:, 0])][0]
-        max_depth_col = self.depth_box[np.argmax(self.depth_box[:, 0])][0]
-        min_depth_row = self.depth_box[np.argmin(self.depth_box[:, 1])][1]
-        max_depth_row = self.depth_box[np.argmax(self.depth_box[:, 1])][1]
 
         depth_rad = self.depth_angle * degree_to_radian
 

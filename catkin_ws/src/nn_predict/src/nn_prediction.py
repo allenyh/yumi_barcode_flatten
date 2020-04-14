@@ -12,42 +12,32 @@ from fcn_resnet import build_fcn_resnet
 from sensor_msgs.msg import Image
 from nn_predict.srv import GetPrediction, GetPredictionResponse
 
+
 class NNPrediction:
     def __init__(self):
         self.cv_bridge = CvBridge()
         r = rospkg.RosPack()
         path = r.get_path('nn_predict')
-        model = rospy.get_param("model", "res_fcn")
-        model_file, self.network = self.build_nn(model)
+        model_file, self.network = self.build_nn()
 
         self.labels = ['background', 'barcode']
         self.use_gpu = torch.cuda.is_available()
-        self.num_gpu = list(range(torch.cuda.device_count()))
 
         if self.use_gpu:
             self.network = self.network.cuda()
 
-        self.network = nn.DataParallel(self.network, device_ids=self.num_gpu)
-
         state_dict = torch.load(os.path.join(path, "models", model_file))
         self.network.load_state_dict(state_dict)
+        self.network.eval()
 
         # Services
         rospy.Service('~/nn_predict', GetPrediction, self.predict_cb)
 
         rospy.loginfo('nn predict node ready!')
 
-    def build_nn(self, model):
-        network = None
-        if model == 'res_fcn':
-            model_file = 'FCNs_barcode_batch4_epoch99_RMSprop_lr0.0001.pkl'
-            network = build_fcn_resnet()
-        # elif model_name == 'res_cafare_fcn':
-        #     model_name = 'CARAFE_FCNs_barcode_batch6_epoch49_RMSprop_lr0.0001.pkl'
-        #     network = build_carafe_fcn_resnet()
-        # elif model_name == 'barcodenet':
-        #     model_name = 'BarcodeNets_barcode_batch6_epoch49_RMSprop_lr0.0001.pkl'
-        #     network = build_barcodenet()
+    def build_nn(self):
+        model_file = 'CARAFE_FCNs_barcode_batch3_epoch89_RMSprop_lr0.0001.pkl'
+        network = build_fcn_resnet()
         return model_file, network
 
     def predict_cb(self, req):
