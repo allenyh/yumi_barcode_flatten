@@ -1,6 +1,6 @@
 # scipy==0.16.1
 h5py==2.5.0
-ipython==3.1.0
+ipython==7.16.3
 matplotlib==1.4.3
 NearPy==0.2.2
 numpy==1.10.1
