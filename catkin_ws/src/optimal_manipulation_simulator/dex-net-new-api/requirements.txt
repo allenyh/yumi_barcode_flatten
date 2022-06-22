@@ -3,7 +3,7 @@ h5py==2.5.0
 ipython==3.1.0
 matplotlib==1.4.3
 NearPy==0.2.2
-numpy==1.10.1
+numpy==1.22.0
 Pillow==3.0.0
 python-dateutil==2.4.2
 PyYAML==3.11
